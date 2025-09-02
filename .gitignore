@@ -27,3 +27,8 @@ dist
 .vercel
 .env
 .env.local
+.env
+.env.*
+.vercel
+node_modules
+dist
