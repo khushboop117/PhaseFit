@@ -32,3 +32,8 @@ dist
 .vercel
 node_modules
 dist
+.env
+.env.*
+.vercel
+node_modules
+dist
