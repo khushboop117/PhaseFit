@@ -150,6 +150,9 @@ function humanizeProviderError(s = "") {
   if (msg.includes("429")) return "Rate limit / quota exceeded";
   if (msg.includes("404") && msg.includes("model")) return "Model not found for this provider";
   if (msg.includes("access")) return "Access denied (org/project/billing)";
+  if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) return "Network connection failed";
+  if (msg.includes("timeout")) return "Request timed out";
+  if (msg.includes("cors")) return "Cross-origin request blocked";
   return "Network or provider issue";
 }
 
@@ -335,51 +338,79 @@ export default function App() {
   /* ---------- API call helpers ---------- */
   async function providerCall(messages, { maxTokens = 900 } = {}) {
     if (USE_BACKEND) {
-      const res = await fetch(`${API_BASE}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: apiProvider,                 // "openai" | "groq" | "openrouter"
-          model: apiModel || PROVIDERS[apiProvider].defaultModel,
-          messages,
-          temperature: 0.8,
-          max_tokens: maxTokens,
-        }),
-      });
+      let res;
+      try {
+        res = await fetch(`${API_BASE}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider: apiProvider,                 // "openai" | "groq" | "openrouter"
+            model: apiModel || PROVIDERS[apiProvider].defaultModel,
+            messages,
+            temperature: 0.8,
+            max_tokens: maxTokens,
+          }),
+        });
+      } catch (networkError) {
+        throw new Error(`Network request failed: ${networkError.message}`);
+      }
       const raw = await res.text();
       if (!res.ok) {
         let detail = raw;
-        try { const j = JSON.parse(raw); detail = j.error?.message || j.message || raw; } catch {}
+        try { const j = JSON.parse(raw); detail = j.error?.message || j.message || raw; } catch (parseError) { /* Use raw text if JSON parse fails */ }
         throw new Error(`${res.status} ${detail}`);
       }
-      const data = JSON.parse(raw);
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch (parseError) {
+        throw new Error(`Invalid JSON response from server: ${raw.substring(0, 100)}...`);
+      }
       const content = stripFences(data.choices?.[0]?.message?.content || "{}");
-      return JSON.parse(content);
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        throw new Error(`Invalid JSON content from AI provider: ${content.substring(0, 100)}...`);
+      }
     }
 
     // (fallback: old direct-to-provider code; you can keep it if you like)
     const cfg = PROVIDERS[apiProvider];
     const key = (apiKey || "").trim();
     if (!key) throw new Error("401 No API key set");
-    const res = await fetch(cfg.url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: apiModel || cfg.defaultModel,
-        messages,
-        temperature: 0.8,
-        max_tokens: maxTokens,
-      }),
-    });
+    let res;
+    try {
+      res = await fetch(cfg.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model: apiModel || cfg.defaultModel,
+          messages,
+          temperature: 0.8,
+          max_tokens: maxTokens,
+        }),
+      });
+    } catch (networkError) {
+      throw new Error(`Network request failed: ${networkError.message}`);
+    }
     const raw = await res.text();
     if (!res.ok) {
       let detail = raw;
-      try { const j = JSON.parse(raw); detail = j.error?.message || j.message || raw; } catch {}
+      try { const j = JSON.parse(raw); detail = j.error?.message || j.message || raw; } catch (parseError) { /* Use raw text if JSON parse fails */ }
       throw new Error(`${res.status} ${detail}`);
     }
-    const data = JSON.parse(raw);
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseError) {
+      throw new Error(`Invalid JSON response from provider: ${raw.substring(0, 100)}...`);
+    }
     const content = stripFences(data.choices?.[0]?.message?.content || "{}");
-    return JSON.parse(content);
+    try {
+      return JSON.parse(content);
+    } catch (parseError) {
+      throw new Error(`Invalid JSON content from AI provider: ${content.substring(0, 100)}...`);
+    }
   }
 
 
@@ -475,7 +506,7 @@ No generic wording. Output STRICT JSON only.`.trim(),
       if (!plan.grocery || !plan.grocery.length) plan.grocery = deriveGrocery(plan);
       return plan;
     } catch (e) {
-      console.warn("AI plan failed:", e?.message || e);
+      console.error("AI plan failed:", e); // Log full error object for debugging
       setAiError(humanizeProviderError(e?.message || String(e)));
       return null;
     } finally {
@@ -541,7 +572,7 @@ Return STRICT JSON:
       }
       return val;
     } catch (e) {
-      console.warn("Alternative failed:", e?.message || e);
+      console.error("Alternative failed:", e); // Log full error object for debugging
       setAiError(humanizeProviderError(e?.message || String(e)));
       return null;
     } finally {
@@ -779,6 +810,7 @@ Return STRICT JSON:
                   placeholder={`1–${profile.cycle_length || 28}`}
                   value={manualDay}
                   onChange={(e) => setManualDay(e.target.value.replace(/[^\d]/g, ""))}
+                  inputMode="numeric"
                 />
               )}
             </div>

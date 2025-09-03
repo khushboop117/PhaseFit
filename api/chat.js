@@ -48,7 +48,9 @@ export default async function handler(req, res) {
 
     const cfg = MAP[provider];
     if (!cfg) return res.status(400).json({ error: `Unknown provider: ${provider}` });
-    if (!cfg.key) return res.status(401).json({ error: `No API key for ${provider}` });
+    if (!cfg.key) return res.status(401).json({ 
+      error: `No API key for ${provider}. Please set ${provider.toUpperCase()}_API_KEY environment variable.` 
+    });
 
     const payload = {
       model: model || cfg.defaultModel,
