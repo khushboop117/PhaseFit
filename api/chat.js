@@ -2,6 +2,11 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+console.log("Using provider:", provider);
+console.log("Model:", model);
+console.log("Key exists?", !!cfg.key);
+console.log("Key starts with:", cfg.key?.slice(0, 5));
+console.log("OPENAI_API_KEY length:", process.env.OPENAI_API_KEY?.length);
 
   try {
     const { model = "gpt-4o-mini", messages, temperature = 0.8, max_tokens = 900 } = req.body;
