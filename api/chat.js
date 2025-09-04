@@ -2,11 +2,6 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-console.log("Using provider:", provider);
-console.log("Model:", model);
-console.log("Key exists?", !!cfg.key);
-console.log("Key starts with:", cfg.key?.slice(0, 5));
-console.log("OPENAI_API_KEY length:", process.env.OPENAI_API_KEY?.length);
 
   try {
     const { model = "gpt-4o-mini", messages, temperature = 0.8, max_tokens = 900 } = req.body;
@@ -16,6 +11,10 @@ console.log("OPENAI_API_KEY length:", process.env.OPENAI_API_KEY?.length);
     if (!apiKey) {
       return res.status(400).json({ error: "Missing OpenAI API key" });
     }
+
+    console.log("Chat API invoked");
+    console.log("Model:", model);
+    console.log("API key present:", !!apiKey);
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -31,7 +30,7 @@ console.log("OPENAI_API_KEY length:", process.env.OPENAI_API_KEY?.length);
       }),
     });
 
-    const raw = await response.text(); // safer than .json() directly
+    const raw = await response.text();
     let data;
     try {
       data = JSON.parse(raw);
