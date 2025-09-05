@@ -11,10 +11,12 @@ export async function signUp(email, password, fullName) {
     data: { fullName }, // goes into auth.users.user_metadata
   },});
   if (error) throw error;
-  return data;
+  return "✅ Email sent! Please check your inbox to confirm your account.";
+  // return data;
 }
 
 export async function logout() {
   const { error } = await supabase.auth.signOut();
+  window.location.reload();
   if (error) throw error;
 }

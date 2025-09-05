@@ -340,11 +340,12 @@ async function swapWeekMeal(dayIndex, mealKey) {
   }
 
   /* ---------- Logout ---------- */
-  async function logout() {
-    await supabase.auth.signOut();
-  }
+async function logout() {
+  await supabase.auth.signOut();
+  window.location.href = "/";
+}
 
-  /* ---------- Dashboard ---------- */
+// ---------- Dashboard ----------
 const Dashboard = () => {
   const daysSinceLP = phase.daysSince ?? daysSince(profile.last_period);
   const delayDays =

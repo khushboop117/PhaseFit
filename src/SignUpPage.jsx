@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import { signUp } from "./auth";
 import AuthCard from "./AuthCard";
 
@@ -7,13 +7,18 @@ export default function SignupPage({ switchToLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
 
   async function handleSignup(e) {
     e.preventDefault();
+    setError("");
+    setSuccess("");
     try {
-      await signUp(email, password,fullName); // supabase.auth.signUp under the hood
+      const successMessage = await signUp(email, password, fullName); // 👈
+      setSuccess(successMessage); // 👈 show message
     } catch (err) {
-      setError(err.message);
+     // setError(err.message);
     }
   }
 
@@ -56,6 +61,7 @@ export default function SignupPage({ switchToLogin }) {
           required
         />
         {error && <p className="text-red-600 text-sm">{error}</p>}
+        {success && <p className="text-green-600 text-sm">{success}</p>}
         <button
           type="submit"
           className="w-full py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
