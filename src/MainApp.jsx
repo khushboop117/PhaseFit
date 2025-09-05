@@ -630,20 +630,35 @@ const Planner = () => (
         </div>
       </div>
     )}
+{showGrocery && (
+  <div
+    className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
+    onClick={() => setShowGrocery(false)} // overlay closes
+  >
+    <div
+      className="bg-white rounded-2xl shadow-lg p-5 w-full max-w-md relative"
+      onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+    >
+      {/* Close button */}
+      <button
+        onClick={() => setShowGrocery(false)}
+        className="absolute top-3 right-3 text-slate-500 hover:text-slate-700 text-lg"
+        aria-label="Close grocery list"
+      >
+        ✕
+      </button>
 
-    {showGrocery && (
-      <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow p-5 w-full max-w-md">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-semibold">Grocery List</h3>
-            <button onClick={() => setShowGrocery(false)}>Close</button>
-          </div>
-          <ul className="text-slate-900 list-disc ml-5 space-y-1">
-            {weekPlan.grocery.map((g, i) => <li key={i}>{g}</li>)}
-          </ul>
-        </div>
-      </div>
-    )}
+      <h3 className="text-lg font-semibold mb-3">Grocery List</h3>
+      <ul className="text-slate-900 list-disc ml-5 space-y-1">
+        {weekPlan.grocery.map((g, i) => (
+          <li key={i}>{g}</li>
+        ))}
+      </ul>
+    </div>
+  </div>
+)}
+
+
   </div>
 );
 
