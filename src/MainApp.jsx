@@ -613,10 +613,10 @@ const Planner = () => (
                 {["breakfast","lunch","dinner","snack"].map((k) => (
                   <li key={k} className="flex items-start gap-2">
                     <span className="font-semibold capitalize w-20">{k}:</span>
-                    <span className="flex-1">{d.meals[k]}</span>
+                    <span className="flex flex-wrap items-center gap-2">{d.meals[k]}</span>
                     <button
                       title="Suggest another option"
-                      className="w-full sm:w-auto px-2 py-1 text-xs rounded-md border bg-white hover:bg-slate-50"
+                      className="px-2 py-1 text-xs rounded-md border bg-white hover:bg-slate-50 whitespace-nowrap"
                       onClick={() => swapTodayMeal(i, k)}
                     >
                       🔄 Swap
