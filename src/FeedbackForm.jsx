@@ -23,7 +23,7 @@ export default function FeedbackForm({ user, onSubmitted }) {
       setSubmitted(true);
       if (onSubmitted) onSubmitted();
     } catch (err) {
-      setError(err.message);
+      // setError(err.message);
     }
   }
 

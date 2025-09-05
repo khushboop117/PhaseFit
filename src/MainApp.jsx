@@ -335,8 +335,29 @@ async function swapWeekMeal(dayIndex, mealKey) {
     setTodayPlan(plan);
   }
   async function generateWeek() {
-    const plan = await fetchAIPlan(daysCount);
-    setWeekPlan(plan);
+      setAiBusy(true);
+  setAiError("");
+  try {
+    let allDays = [];
+    let grocery = [];
+
+    const chunkSize = 3; // ask for 3 days at a time
+    for (let i = 0; i < daysCount; i += chunkSize) {
+      const chunkDays = Math.min(chunkSize, daysCount - i);
+      const data = await providerCall([
+        { role: "system", content: "You are a helpful fitness/nutrition coach." },
+        { role: "user", content: buildPrimaryPrompt(chunkDays) },
+      ]);
+      allDays = [...allDays, ...data.days];
+      grocery = [...grocery, ...(data.grocery || [])];
+    }
+
+    setWeekPlan({ days: allDays, grocery });
+  } catch (err) {
+    setAiError(err.message);
+  } finally {
+    setAiBusy(false);
+  }
   }
 
   /* ---------- Logout ---------- */
@@ -543,7 +564,7 @@ const Dashboard = () => {
   );
 };
 
-<FeedbackForm user={user} />
+//<FeedbackForm user={user} />
   /* ---------- Planner ---------- */
 const Planner = () => (
   <div className="max-w-6xl mx-auto px-5 pb-10 space-y-6">
@@ -626,26 +647,59 @@ const Planner = () => (
   </div>
 );
 
-  /* ---------- TopBar ---------- */
-  const TopBar = () => (
-    <div className="max-w-6xl mx-auto px-5 pt-6 pb-2 flex items-center justify-between">
+const TopBar = () => (
+  <div className="max-w-6xl mx-auto px-5 pt-6 pb-2">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Logo */}
       <div className="flex items-center gap-3">
-        <Sparkles className="w-6 h-6 text-pink-600" />
-        <span className="text-2xl font-extrabold text-pink-700">PhaseFit</span>
+        <Sparkles className="w-7 h-7 text-pink-600" />
+        <span className="text-2xl font-extrabold tracking-tight text-pink-700 pl-1">
+          PhaseFit
+        </span>
       </div>
-      <div className="flex items-center gap-2 text-sm">
-        <button onClick={() => setView("dashboard")}>Dashboard</button>
-        <button onClick={() => setView("planner")}>Planner</button>
-        <button onClick={() => setView("feedback")}>Feedback</button>
+
+      {/* Nav buttons */}
+      <div className="flex flex-wrap gap-3 text-sm">
         <button
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white"
-          onClick={logout}
+          onClick={() => setView("dashboard")}
+          className={`px-3 py-1.5 rounded-lg border ${
+            view === "dashboard"
+              ? "bg-pink-600 text-white border-pink-600"
+              : "bg-white hover:bg-slate-50"
+          }`}
         >
-          <LogOut className="w-4 h-4" /> Logout
+          Dashboard
+        </button>
+        <button
+          onClick={() => setView("planner")}
+          className={`px-3 py-1.5 rounded-lg border ${
+            view === "planner"
+              ? "bg-pink-600 text-white border-pink-600"
+              : "bg-white hover:bg-slate-50"
+          }`}
+        >
+          Planner
+        </button>
+        <button
+          onClick={() => setView("feedback")}
+          className={`px-3 py-1.5 rounded-lg border ${
+            view === "feedback"
+              ? "bg-pink-600 text-white border-pink-600"
+              : "bg-white hover:bg-slate-50"
+          }`}
+        >
+          Feedback
+        </button>
+        <button
+          onClick={logout}
+          className="px-3 py-1.5 rounded-lg border bg-white hover:bg-slate-50 text-rose-600"
+        >
+          <LogOut className="w-4 h-4 inline" /> Logout
         </button>
       </div>
     </div>
-  );
+  </div>
+);
 
   /* ---------- Render ---------- */
   return (
