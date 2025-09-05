@@ -11,7 +11,7 @@ export default function TestimonialsWall() {
   async function fetchFeedback() {
     const { data, error } = await supabase
       .from("feedback")
-      .select("id, user_email, rating, message, created_at")
+      .select("id, fullName, rating, message, created_at")
       .order("created_at", { ascending: false });
 
     if (!error && data) {
@@ -31,13 +31,11 @@ export default function TestimonialsWall() {
             {/* Avatar from email */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center font-bold text-pink-700">
-                {f.user_email?.[0]?.toUpperCase() || "U"}
+                {f.fullName?.[0]?.toUpperCase() || "U"}
               </div>
               <div>
-                <p className="text-sm font-semibold">{f.user_email}</p>
-                <p className="text-xs text-slate-500">
-                  {new Date(f.created_at).toLocaleDateString()}
-                </p>
+                <p className="text-sm font-semibold">{f.fullName}</p>
+
               </div>
             </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { supabase } from "./supabaseClient"; 
 
 export default function FeedbackForm({ user, onSubmitted }) {
+  const fullName = user?.user_metadata?.fullName || "Anonymous";
   const [rating, setRating] = useState(0);
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -12,8 +13,9 @@ export default function FeedbackForm({ user, onSubmitted }) {
     setError("");
     try {
       const { error } = await supabase.from("feedback").insert({
-        user_id: user.id,
-        user_email: user.email,
+      user_id: user?.id || null, // 👈 link to Supabase auth user
+      user_email: user?.email || null, // 👈 save email
+      fullName: user?.user_metadata?.fullName || "Anonymous", // 👈 save name
         rating,
         message,
       });

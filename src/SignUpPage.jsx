@@ -3,6 +3,7 @@ import { signUp } from "./auth";
 import AuthCard from "./AuthCard";
 
 export default function SignupPage({ switchToLogin }) {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -10,7 +11,7 @@ export default function SignupPage({ switchToLogin }) {
   async function handleSignup(e) {
     e.preventDefault();
     try {
-      await signUp(email, password); // supabase.auth.signUp under the hood
+      await signUp(email, password,fullName); // supabase.auth.signUp under the hood
     } catch (err) {
       setError(err.message);
     }
@@ -30,11 +31,21 @@ export default function SignupPage({ switchToLogin }) {
     >
       <form onSubmit={handleSignup} className="space-y-4">
         <input
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Enter Your Name"
+            className="w-full px-4 py-2 border rounded-lg"
+            required
+          />
+
+        <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email address"
           className="w-full px-4 py-2 border rounded-lg"
+          required
         />
         <input
           type="password"
@@ -42,6 +53,7 @@ export default function SignupPage({ switchToLogin }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           className="w-full px-4 py-2 border rounded-lg"
+          required
         />
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <button

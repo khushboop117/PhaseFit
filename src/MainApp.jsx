@@ -90,6 +90,60 @@ function loadApiSettings() {
   }
 }
 
+function TagInput({ label, values, onChange, placeholder }) {
+  const [val, setVal] = useState("");
+  const add = (t) => {
+    const v = (t || "").trim();
+    if (!v) return;
+    if (values.includes(v.toLowerCase())) return;
+    onChange([...values, v.toLowerCase()]);
+    setVal("");
+  };
+  const onKey = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      add(val);
+    }
+    if (e.key === "Backspace" && !val && values.length) {
+      onChange(values.slice(0, -1));
+    }
+  };
+  return (
+    <div className="text-sm text-slate-700 col-span-2">
+      <div className="mb-1">{label}</div>
+      <div className="flex flex-wrap items-center gap-2 p-2 border rounded-lg">
+        {values.map((t, i) => (
+          <span key={i} className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 px-2 py-0.5 rounded-full">
+            {t}
+            <button
+              type="button"
+              className="text-slate-500 hover:text-slate-700"
+              onClick={() => onChange(values.filter((_, idx) => idx !== i))}
+              aria-label={`remove ${t}`}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          className="flex-1 min-w-[10ch] outline-none"
+          type="text"
+          value={val}
+          onChange={(e)=>setVal(e.target.value)}
+          onKeyDown={onKey}
+          placeholder={placeholder}
+          autoComplete="off"
+          inputMode="text"
+        />
+        <button type="button" className="px-2 py-1 rounded-md border bg-white" onClick={() => add(val)}>
+          Add
+        </button>
+      </div>
+      <div className="text-xs text-slate-500 mt-1">Press Enter or comma to add each item.</div>
+    </div>
+  );
+}
+
 /* =============== MAIN APP =============== */
 export default function MainApp({ user }) {
   const [view, setView] = useState("dashboard");
@@ -291,273 +345,285 @@ async function swapWeekMeal(dayIndex, mealKey) {
   }
 
   /* ---------- Dashboard ---------- */
-  const Dashboard = () => {
-    const daysSinceLP = phase.daysSince ?? daysSince(profile.last_period);
-    const delayDays =
-      daysSinceLP != null && profile.cycle_length
-        ? Math.max(0, daysSinceLP - Number(profile.cycle_length))
-        : 0;
+const Dashboard = () => {
+  const daysSinceLP = phase.daysSince ?? daysSince(profile.last_period);
+  const delayDays =
+    daysSinceLP != null && profile.cycle_length
+      ? Math.max(0, daysSinceLP - Number(profile.cycle_length))
+      : 0;
 
-    return (
-      <div className="max-w-6xl mx-auto px-5 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-6">
-          {/* Current Phase */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-3 mb-1">
-              <CalendarDays className="text-pink-600" />
-              <h2 className="text-xl font-semibold">Current Phase</h2>
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm">
-                {phase.name}
-              </span>
-              <span className="text-sm text-slate-700">
-                Day {phase.dayInCycle || "—"} of cycle
-              </span>
-            </div>
-            {daysSinceLP != null && (
-              <p className="text-xs text-slate-600 mt-2">
-                Last period was <strong>{daysSinceLP}</strong> day(s) ago.
-                {delayDays > 0 && <> Possible delay ~{delayDays} day(s).</>}
-              </p>
-            )}
+  return (
+    <div className="max-w-6xl mx-auto px-4 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-1 space-y-6">
+        {/* Current Phase */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-3 mb-1">
+            <CalendarDays className="text-pink-600" />
+            <h2 className="text-xl font-semibold">Current Phase</h2>
           </div>
-
-          {/* About Phase */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm">
-            <h2 className="text-xl font-semibold mb-2">About {phase.name}</h2>
-            <p className="text-sm text-slate-700">
-              {PHASE_DETAILS[phase.name] || "Your cycle phase details will appear here."}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm">
+              {phase.name}
+            </span>
+            <span className="text-sm text-slate-700">
+              Day {phase.dayInCycle || "—"} of cycle
+            </span>
+          </div>
+          {daysSinceLP != null && (
+            <p className="text-xs text-slate-600 mt-2">
+              Last period was <strong>{daysSinceLP}</strong> day(s) ago.
+              {delayDays > 0 && <> Possible delay ~{delayDays} day(s).</>}
             </p>
-          </div>
-
-          {/* Profile Editor */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm">
-            <h2 className="text-xl font-semibold">Your Profile</h2>
-            <div className="mt-3 space-y-3 text-sm">
-              <label className="block">Goal:
-                <select
-                  className="ml-2 p-2 border rounded-lg"
-                  value={profile.goal}
-                  onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
-                >
-                  <option value="energy">Boost Energy</option>
-                  <option value="fat_loss">Fat Loss</option>
-                  <option value="strength">Strength</option>
-                  <option value="symptom_relief">Symptom Relief</option>
-                </select>
-              </label>
-
-              <label className="block">Diet:
-                <select
-                  className="ml-2 p-2 border rounded-lg"
-                  value={profile.diet}
-                  onChange={(e) => setProfile({ ...profile, diet: e.target.value })}
-                >
-                  <option value="vegetarian">Vegetarian</option>
-                  <option value="vegan">Vegan</option>
-                  <option value="eggs_ok">Vegetarian + Eggs</option>
-                  <option value="nonveg">Non-Vegetarian</option>
-                </select>
-              </label>
-
-              <label className="block">Cycle length:
-                <select
-                  className="ml-2 p-2 border rounded-lg"
-                  value={profile.cycle_length}
-                  onChange={(e) => setProfile({ ...profile, cycle_length: Number(e.target.value) })}
-                >
-                  {Array.from({ length: 30 }, (_, i) => i + 16).map((d) => (
-                    <option key={d} value={d}>{d} days</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block">Last period:
-                <DatePicker
-                  selected={isoToLocalDate(profile.last_period)}
-                  onChange={(date) => setProfile({ ...profile, last_period: localDateToISO(date) })}
-                  maxDate={new Date()}
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  dateFormat="yyyy-MM-dd"
-                  placeholderText="Select"
-                  className="ml-2 p-2 border rounded-lg"
-                />
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  checked={profile.has_pcos}
-                  onChange={(e) => setProfile({ ...profile, has_pcos: e.target.checked })}
-                /> PCOS-aware nutrition
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Right column - Today’s AI Plan */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-5 rounded-2xl shadow-sm">
-            <Salad className="text-emerald-600 mb-2" />
-            <h2 className="text-xl font-semibold">Today’s Plan (AI)</h2>
-            {aiError && <p className="text-red-600 text-sm">{aiError}</p>}
-            <button
-              className="px-4 py-2 mt-3 rounded-lg bg-pink-600 text-white hover:bg-pink-700"
-              disabled={aiBusy}
-              onClick={generateToday}
-            >
-              {aiBusy ? "Thinking…" : "Generate Today’s Plan"}
-            </button>
-            {todayPlan && (
-              <div className="mt-4 grid md:grid-cols-2 gap-4 text-slate-900">
-                {todayPlan.days.map((d, i) => (
-                  <div key={i} className="p-3 rounded-lg border bg-slate-50">
-                    <div className="font-semibold mb-2">{d.label}</div>
-                   <ul className="text-sm ml-1 space-y-2">
-  {["breakfast","lunch","dinner","snack"].map((k) => (
-    <li key={k} className="flex items-start gap-2">
-      <span className="font-semibold capitalize w-20">{k}:</span>
-      <span className="flex-1">{d.meals[k]}</span>
-      <button
-        title="Suggest another option"
-        className="px-2 py-1 text-xs rounded-md border bg-white hover:bg-slate-50"
-        onClick={() => swapTodayMeal(i, k)}
-      >
-        🔄 Refresh
-      </button>
-    </li>
-  ))}
-</ul>
-                    <div className="mt-2 text-sm">💪 {d.workout}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quotes & Jokes */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white p-5 rounded-2xl shadow-sm">
-              <Quote className="text-amber-600 mb-2" />
-              <h2 className="text-xl font-semibold">Daily Quote</h2>
-              <p className="italic text-slate-800">
-                {
-                  [
-                    "Small steps today, big changes tomorrow.",
-                    "Your body is wise; listen gently.",
-                    "Consistency beats intensity.",
-                    "You’re doing better than you think.",
-                  ][phase.dayInCycle % 4 || 0]
-                }
-              </p>
-            </div>
-            <div className="bg-white p-5 rounded-2xl shadow-sm">
-              <Laugh className="text-rose-600 mb-2" />
-              <h2 className="text-xl font-semibold">Clean Joke</h2>
-              <p className="text-slate-800">
-                {
-                  [
-                    "Why did the apple stop in the road? It ran out of juice. 🍎",
-                    "Why don’t eggs tell jokes? They’d crack each other up! 🥚",
-                    "I’m on a seafood diet—I see food and make a smarter swap. 😅",
-                    "Treadmills: pay to walk nowhere… efficiently. 🏃‍♀️",
-                  ][phase.dayInCycle % 4 || 0]
-                }
-              </p>
-            </div>
-            {/* <div className="space-y-8">
-              <FeedbackForm user={user} />
-              <TestimonialsWall />
-            </div> */}
-          </div>
-        </div>
-      </div>
-    );
-  };
-<FeedbackForm user={user} />
-  /* ---------- Planner ---------- */
-  const Planner = () => (
-    <div className="max-w-6xl mx-auto px-5 pb-10 space-y-6">
-      <div className="bg-white p-5 rounded-2xl shadow-sm">
-        <h2 className="text-xl font-semibold">Weekly Planner</h2>
-        <div className="mt-3 flex items-center gap-3">
-          <label className="text-sm">Days:
-            <select
-              className="ml-2 p-2 border rounded-lg"
-              value={daysCount}
-              onChange={(e) => setDaysCount(Number(e.target.value))}
-            >
-              {[3, 5, 7, 10, 14].map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </label>
-          <button
-            className="px-4 py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700"
-            disabled={aiBusy}
-            onClick={generateWeek}
-          >
-            {aiBusy ? "Thinking…" : "Generate AI Plan"}
-          </button>
-          {weekPlan?.grocery?.length > 0 && (
-            <button
-              className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg border bg-white"
-              onClick={() => setShowGrocery(true)}
-            >
-              <ShoppingBasket className="w-4 h-4" /> Grocery List
-            </button>
           )}
         </div>
-        {aiError && <p className="text-xs text-red-600 mt-2">{aiError}</p>}
+
+        {/* About Phase */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm">
+          <h2 className="text-xl font-semibold mb-2">About {phase.name}</h2>
+          <p className="text-sm text-slate-700">
+            {PHASE_DETAILS[phase.name] || "Your cycle phase details will appear here."}
+          </p>
+        </div>
+
+        {/* Profile Editor */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm">
+          <h2 className="text-xl font-semibold">Your Profile</h2>
+          <div className="mt-3 space-y-4 text-sm">
+            <label className="block">
+              Goal:
+              <select
+                className="mt-1 w-full p-2 border rounded-lg"
+                value={profile.goal}
+                onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
+              >
+                <option value="energy">Boost Energy</option>
+                <option value="fat_loss">Fat Loss</option>
+                <option value="strength">Strength</option>
+                <option value="symptom_relief">Symptom Relief</option>
+              </select>
+            </label>
+
+            <label className="block">
+              Diet:
+              <select
+                className="mt-1 w-full p-2 border rounded-lg"
+                value={profile.diet}
+                onChange={(e) => setProfile({ ...profile, diet: e.target.value })}
+              >
+                <option value="vegetarian">Vegetarian</option>
+                <option value="vegan">Vegan</option>
+                <option value="eggs_ok">Vegetarian + Eggs</option>
+                <option value="nonveg">Non-Vegetarian</option>
+              </select>
+            </label>
+
+            <label className="block">
+              Cycle length:
+              <select
+                className="mt-1 w-full p-2 border rounded-lg"
+                value={profile.cycle_length}
+                onChange={(e) =>
+                  setProfile({ ...profile, cycle_length: Number(e.target.value) })
+                }
+              >
+                {Array.from({ length: 30 }, (_, i) => i + 16).map((d) => (
+                  <option key={d} value={d}>{d} days</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              Last period:
+              <DatePicker
+                selected={isoToLocalDate(profile.last_period)}
+                onChange={(date) => setProfile({ ...profile, last_period: localDateToISO(date) })}
+                maxDate={new Date()}
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
+                dateFormat="yyyy-MM-dd"
+                placeholderText="Select"
+                className="mt-1 w-full p-2 border rounded-lg"
+              />
+            </label>
+
+            <TagInput
+              label="Dislikes"
+              values={profile.dislikes}
+              onChange={(vals) => setProfile({ ...profile, dislikes: vals })}
+              placeholder="e.g., paneer, chickpeas"
+            />
+
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={profile.has_pcos}
+                onChange={(e) => setProfile({ ...profile, has_pcos: e.target.checked })}
+              /> PCOS-aware nutrition
+            </label>
+          </div>
+        </div>
       </div>
 
-      {weekPlan && (
+      {/* Right column - Today’s AI Plan */}
+      <div className="lg:col-span-2 space-y-6">
         <div className="bg-white p-5 rounded-2xl shadow-sm">
-          <h2 className="text-xl font-semibold">{daysCount}-Day Plan</h2>
-          <div className="mt-3 grid md:grid-cols-2 gap-4 text-slate-900">
-            {weekPlan.days.map((d, i) => (
-              <div key={i} className="p-3 rounded-lg border bg-slate-50">
-                <div className="font-semibold mb-2">{d.label}</div>
-               <ul className="text-sm ml-1 space-y-2">
-  {["breakfast","lunch","dinner","snack"].map((k) => (
-    <li key={k} className="flex items-start gap-2">
-      <span className="font-semibold capitalize w-20">{k}:</span>
-      <span className="flex-1">{d.meals[k]}</span>
-      <button
-        title="Suggest another option"
-        className="px-2 py-1 text-xs rounded-md border bg-white hover:bg-slate-50"
-        onClick={() => swapTodayMeal(i, k)}
-      >
-        🔄 Refresh
-      </button>
-    </li>
-  ))}
-</ul>
-                <div className="mt-2 text-sm">💪 {d.workout}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+          <Salad className="text-emerald-600 mb-2" />
+          <h2 className="text-xl font-semibold">Today’s Plan (AI)</h2>
+          {aiError && <p className="text-red-600 text-sm">{aiError}</p>}
+          <button
+            className="w-full sm:w-auto px-4 py-3 mt-3 rounded-lg bg-pink-600 text-white hover:bg-pink-700"
+            disabled={aiBusy}
+            onClick={generateToday}
+          >
+            {aiBusy ? "Thinking…" : "Generate Today’s Plan"}
+          </button>
 
-      {showGrocery && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow p-5 w-full max-w-md">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-semibold">Grocery List</h3>
-              <button onClick={() => setShowGrocery(false)}>Close</button>
+          {todayPlan && (
+            <div className="mt-4 grid md:grid-cols-2 gap-4 text-slate-900">
+              {todayPlan.days.map((d, i) => (
+                <div key={i} className="p-3 rounded-lg border bg-slate-50">
+                  <div className="font-semibold mb-2">{d.label}</div>
+                  <ul className="text-sm ml-1 space-y-2">
+                    {["breakfast", "lunch", "dinner", "snack"].map((k) => (
+                      <li key={k} className="flex items-start gap-2">
+                        <span className="font-semibold capitalize w-20">{k}:</span>
+                        <span className="flex-1">{d.meals[k]}</span>
+                        <button
+                          title="Suggest another option"
+                          className="w-full sm:w-auto px-2 py-1 text-xs rounded-md border bg-white hover:bg-slate-50"
+                          onClick={() => swapTodayMeal(i, k)}
+                        >
+                          🔄 Suggest Another Option
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-2 text-sm">💪 {d.workout}</div>
+                </div>
+              ))}
             </div>
-            <ul className="text-slate-900 list-disc ml-5 space-y-1">
-              {weekPlan.grocery.map((g, i) => <li key={i}>{g}</li>)}
-            </ul>
+          )}
+        </div>
+
+        {/* Quotes & Jokes */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white p-5 rounded-2xl shadow-sm">
+            <Quote className="text-amber-600 mb-2" />
+            <h2 className="text-xl font-semibold">Motivation of the Day</h2>
+            <p className="italic text-slate-800">
+              {
+                [
+                  "Small steps today, big changes tomorrow.",
+                  "Your body is wise; listen gently.",
+                  "Consistency beats intensity.",
+                  "You’re doing better than you think.",
+                ][phase.dayInCycle % 4 || 0]
+              }
+            </p>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-sm">
+            <Laugh className="text-rose-600 mb-2" />
+            <h2 className="text-xl font-semibold">Laugh Out Loud</h2>
+            <p className="text-slate-800">
+              {
+                [
+                  "Why did the apple stop in the road? It ran out of juice. 🍎",
+                  "Why don’t eggs tell jokes? They’d crack each other up! 🥚",
+                  "I’m on a seafood diet—I see food and make a smarter swap. 😅",
+                  "Treadmills: pay to walk nowhere… efficiently. 🏃‍♀️",
+                ][phase.dayInCycle % 4 || 0]
+              }
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
+};
+
+<FeedbackForm user={user} />
+  /* ---------- Planner ---------- */
+const Planner = () => (
+  <div className="max-w-6xl mx-auto px-5 pb-10 space-y-6">
+    <div className="bg-white p-5 rounded-2xl shadow-sm">
+      <h2 className="text-xl font-semibold">Weekly Planner</h2>
+      <div className="mt-3 flex flex-col sm:flex-row gap-3">
+        <label className="text-sm flex-1">
+          Days:
+          <select
+            className="mt-1 w-full p-2 border rounded-lg"
+            value={daysCount}
+            onChange={(e) => setDaysCount(Number(e.target.value))}
+          >
+            {[3, 5, 7, 10, 14].map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="w-full sm:w-auto px-4 py-3 rounded-lg bg-pink-600 text-white hover:bg-pink-700"
+          disabled={aiBusy}
+          onClick={generateWeek}
+        >
+          {aiBusy ? "Thinking…" : "Generate AI Plan"}
+        </button>
+        {weekPlan?.grocery?.length > 0 && (
+          <button
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border bg-white"
+            onClick={() => setShowGrocery(true)}
+          >
+            <ShoppingBasket className="w-4 h-4" /> Grocery List
+          </button>
+        )}
+      </div>
+      {aiError && <p className="text-xs text-red-600 mt-2">{aiError}</p>}
+    </div>
+
+    {weekPlan && (
+      <div className="bg-white p-5 rounded-2xl shadow-sm">
+        <h2 className="text-xl font-semibold">{daysCount}-Day Plan</h2>
+        <div className="mt-3 grid md:grid-cols-2 gap-4 text-slate-900">
+          {weekPlan.days.map((d, i) => (
+            <div key={i} className="p-3 rounded-lg border bg-slate-50">
+              <div className="font-semibold mb-2">{d.label}</div>
+              <ul className="text-sm ml-1 space-y-2">
+                {["breakfast","lunch","dinner","snack"].map((k) => (
+                  <li key={k} className="flex items-start gap-2">
+                    <span className="font-semibold capitalize w-20">{k}:</span>
+                    <span className="flex-1">{d.meals[k]}</span>
+                    <button
+                      title="Suggest another option"
+                      className="w-full sm:w-auto px-2 py-1 text-xs rounded-md border bg-white hover:bg-slate-50"
+                      onClick={() => swapTodayMeal(i, k)}
+                    >
+                      🔄 Suggest Another Option
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2 text-sm">💪 {d.workout}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {showGrocery && (
+      <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow p-5 w-full max-w-md">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-semibold">Grocery List</h3>
+            <button onClick={() => setShowGrocery(false)}>Close</button>
+          </div>
+          <ul className="text-slate-900 list-disc ml-5 space-y-1">
+            {weekPlan.grocery.map((g, i) => <li key={i}>{g}</li>)}
+          </ul>
+        </div>
+      </div>
+    )}
+  </div>
+);
 
   /* ---------- TopBar ---------- */
   const TopBar = () => (
